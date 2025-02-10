@@ -50,9 +50,14 @@ def ping_host(ip):
             return "DOWN", "Unreachable"
 
 def scan_port (ip, ports):
+    open_ports = []
     
-    for port in ports:
-        
+    for port in ports: 
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.settimeout(1)
+    output = sock.connect((ip, port))
+    if output == 0:
+        open_ports.append(sock)
 
 def scan_network(cidr):
 
@@ -79,6 +84,7 @@ def scan_network(cidr):
         status, info = ping_host(str(host))
         if status == "UP":
             print(f"{host} - UP ({info}ms)")
+            print(scan_port(host))
             up_count += 1 
         elif status == "DOWN":
             print(f"{host} - DOWN ({info})")
