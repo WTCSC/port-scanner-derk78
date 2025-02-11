@@ -49,16 +49,23 @@ def ping_host(ip):
         else:
             return "DOWN", "Unreachable"
 
-def scan_port (ip, ports):
+def scan_port(ip, ports):
     open_ports = []
     
     for port in ports: 
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        sock.settimeout(1)
-    output = sock.connect((ip, port))
-    if output == 0:
-        open_ports.append(sock)
+        sock.settimeout(.10)
+        
+        try:
+            sock.connect((ip, port))
+            open_ports.append(port)
+            print(f" - Port {port} (OPEN) - Connected succesfully")
+        except socket.error as e:
+            pass
+        finally:
+            sock.close()
 
+    return open_ports
 def scan_network(cidr):
 
     #Checks if the input string has the right CIDR notation using our validate_cidr function
@@ -80,11 +87,14 @@ def scan_network(cidr):
     #Use a for loop to go through all the IPs in the range and use the `ping_host()` function on each one of them.
     #Also have two variables for the status of the IP and the extra info that we specified earlier such as the response time or any errors.
     #Then use if statements to print what we want for each of the cases.
+
     for host in network.hosts():
         status, info = ping_host(str(host))
         if status == "UP":
             print(f"{host} - UP ({info}ms)")
-            print(scan_port(host))
+            open_ports = scan_port(str(host), range(1, 1025))
+            if not open_ports:
+                None
             up_count += 1 
         elif status == "DOWN":
             print(f"{host} - DOWN ({info})")
@@ -101,4 +111,5 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Scan IP addresses within a CIDR range.")
     parser.add_argument("cidr", help="The CIDR notation of the network to scan")
     args = parser.parse_args()
+
     scan_network(args.cidr)
