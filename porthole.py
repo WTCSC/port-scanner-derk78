@@ -50,23 +50,32 @@ def ping_host(ip):
             return "DOWN", "Unreachable"
 
 def scan_port(ip, ports):
+    
     open_ports = []
     
+    #Loop though the ports.
     for port in ports: 
-        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        sock.settimeout(.10)
         
+        #Create a socket object and then define that it is going to be using IPv4 addressing and TCP to communicate with ports.
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.settimeout(.5)
+        
+        #Make a `try` block to attempt a connection to the port.
         try:
             sock.connect((ip, port))
+            #If the connection to the port was successful then append the OPEN port to the `open_ports` list to be returned.
             open_ports.append(port)
+            
+            #If the port is UP and OPEN then tell the user that the port is OPEN and connected succesfully.
             print(f" - Port {port} (OPEN) - Connected succesfully")
-        except socket.error as e:
-            pass
-        finally:
-            sock.close()
-
+            #If the connection timed out then tell the user that they were unable to make a connection to the port.
+        except socket.timeout as e:
+            print(f" - Couldn't connnect to port: {port}")
+        sock.close()
+        
+    #Return the open port/s.
     return open_ports
-def scan_network(cidr):
+def scan_network(cidr, ports):
 
     #Checks if the input string has the right CIDR notation using our validate_cidr function
     #If network is "None" then it will tell you that it is not in valid CIDR notation and exit. 
@@ -92,9 +101,7 @@ def scan_network(cidr):
         status, info = ping_host(str(host))
         if status == "UP":
             print(f"{host} - UP ({info}ms)")
-            open_ports = scan_port(str(host), range(1, 1025))
-            if not open_ports:
-                None
+            open_ports = scan_port(str(host), ports)
             up_count += 1 
         elif status == "DOWN":
             print(f"{host} - DOWN ({info})")
@@ -109,7 +116,16 @@ def scan_network(cidr):
 if __name__ == "__main__":
     #This code handles command line input from the user.
     parser = argparse.ArgumentParser(description="Scan IP addresses within a CIDR range.")
-    parser.add_argument("cidr", help="The CIDR notation of the network to scan")
+    parser.add_argument("cidr", help="The CIDR notation of the network to scan.")
+    parser.add_argument("-p", help="Scan the ports of your choosing on an UP host.")
     args = parser.parse_args()
-
-    scan_network(args.cidr)
+    
+    #Create a variable that takes the hosts and converts them into intergers to be compiled and then take the ports input by the user from the argument `p` and seperate them at the commas to get the individual ports they want to scan.
+    #Also make an if statement incase the user just wants to scan the hosts it doesn't return an attribute error because it can't split `NONE`.
+    if args.p:
+        ports = [int(port) for port in args.p.split(",")]
+    else:
+        ports = []
+    
+    
+    scan_network(args.cidr, ports)
