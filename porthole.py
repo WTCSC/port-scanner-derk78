@@ -53,14 +53,14 @@ def scan_port(ip, ports):
     
     open_ports = []
     
-    #Loop though the ports.
+    #Loop though the ports that the user provided.
     for port in ports: 
         
         #Create a socket object and then define that it is going to be using IPv4 addressing and TCP to communicate with ports.
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.settimeout(.5)
         
-        #Make a `try` block to attempt a connection to the port.
+        #Using a `try` block attempt a TCP connection to the specified host and port. 
         try:
             sock.connect((ip, port))
             #If the connection to the port was successful then append the OPEN port to the `open_ports` list to be returned.
@@ -68,9 +68,10 @@ def scan_port(ip, ports):
             
             #If the port is UP and OPEN then tell the user that the port is OPEN and connected succesfully.
             print(f" - Port {port} (OPEN) - Connected succesfully")
-            #If the connection timed out then tell the user that they were unable to make a connection to the port.
+            #If the connection times out assume that the port in unresponsive and tell the user they were unable to connect to the port.
         except socket.timeout as e:
             print(f" - Couldn't connnect to port: {port}")
+
         sock.close()
         
     #Return the open port/s.
@@ -101,7 +102,10 @@ def scan_network(cidr, ports):
         status, info = ping_host(str(host))
         if status == "UP":
             print(f"{host} - UP ({info}ms)")
+            
+            #Call the `scan_port` function for any host that is up also make sure to turn the host that is being scanned into a string format and then add the ports that user provides so that they can be scanned.
             open_ports = scan_port(str(host), ports)
+
             up_count += 1 
         elif status == "DOWN":
             print(f"{host} - DOWN ({info})")
@@ -120,8 +124,8 @@ if __name__ == "__main__":
     parser.add_argument("-p", help="Scan the ports of your choosing on an UP host.")
     args = parser.parse_args()
     
-    #Create a variable that takes the hosts and converts them into intergers to be compiled and then take the ports input by the user from the argument `p` and seperate them at the commas to get the individual ports they want to scan.
-    #Also make an if statement incase the user just wants to scan the hosts it doesn't return an attribute error because it can't split `NONE`.
+    #Create a variable that takes the ports input by the user from the argument `p` and seperate them at the commas to get the individual ports they want to scan to be scanned.
+    #Also make an if statement incase the user just wants to scan the hosts, not additional information like the ports, so it doesn't return an error because it can't split `NONE`.
     if args.p:
         ports = [int(port) for port in args.p.split(",")]
     else:
